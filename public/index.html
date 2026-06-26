@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Trend Radar</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
+
+    :root {
+      --bg:        #080b14;
+      --surface:   #0e1220;
+      --border:    #1e2640;
+      --accent1:   #4f7fff;
+      --accent2:   #a259ff;
+      --accent3:   #00d4aa;
+      --warn:      #ffb340;
+      --danger:    #ff4f6e;
+      --text:      #e8eaf0;
+      --muted:     #6b7494;
+      --card:      #111728;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Space Grotesk', sans-serif;
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 32px;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      background: rgba(8,11,20,0.92);
+      backdrop-filter: blur(12px);
+      z-index: 100;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logo-icon {
+      width: 36px;
+      height: 36px;
+      position: relative;
+    }
+
+    .logo-icon svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    .logo-text {
+      font-family: 'Space Mono', monospace;
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      background: linear-gradient(90deg, var(--accent1), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .date-selector {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: 'Space Mono', monospace;
+      font-size: 13px;
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      outline: none;
+    }
+
+    .date-selector:focus { border-color: var(--accent1); }
+
+    .refresh-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      transition: all 0.2s;
+    }
+    .refresh-btn:hover { border-color: var(--accent1); color: var(--accent1); }
+
+    /* ── Main layout ── */
+    main {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 28px 32px;
+      display: grid;
+      gap: 20px;
+    }
+
+    /* ── Alert Banner ── */
+    #alert-banner {
+      display: none;
+      border-radius: 10px;
+      padding: 16px 20px;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    #alert-banner.level-0 { display: none; }
+
+    #alert-banner.level-1 {
+      display: flex;
+      background: rgba(255,179,64,0.08);
+      border: 1px solid rgba(255,179,64,0.3);
+    }
+
+    #alert-banner.level-2 {
+      display: flex;
+      background: rgba(255,79,110,0.08);
+      border: 1px solid rgba(255,79,110,0.4);
+      animation: pulse-border 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse-border {
+      0%, 100% { border-color: rgba(255,79,110,0.4); }
+      50%       { border-color: rgba(255,79,110,0.8); }
+    }
+
+    .alert-icon { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
+    .alert-label {
+      font-family: 'Space Mono', monospace;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      margin-bottom: 4px;
+    }
+    .level-1 .alert-label { color: var(--warn); }
+    .level-2 .alert-label { color: var(--danger); }
+
+    .alert-text { font-size: 14px; line-height: 1.6; color: var(--text); }
+
+    /* ── Summary card ── */
+    .summary-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px 24px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .summary-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--accent1), var(--accent2), var(--accent3));
+    }
+
+    .summary-date {
+      font-family: 'Space Mono', monospace;
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+      margin-bottom: 8px;
+    }
+
+    .summary-text {
+      font-size: 15px;
+      line-height: 1.7;
+      color: var(--text);
+    }
+
+    /* ── Grid ── */
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 20px;
+    }
+
+    @media (max-width: 900px) {
+      .two-col { grid-template-columns: 1fr; }
+      main { padding: 20px 16px; }
+    }
+
+    /* ── Section title ── */
+    .section-title {
+      font-family: 'Space Mono', monospace;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section-title::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* ── News items ── */
+    .news-list { display: flex; flex-direction: column; gap: 10px; }
+
+    .news-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px 18px;
+      transition: border-color 0.2s, transform 0.2s;
+      cursor: default;
+    }
+
+    .news-card:hover {
+      border-color: var(--accent1);
+      transform: translateX(2px);
+    }
+
+    .news-card-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
+    .news-title {
+      font-size: 14px;
+      font-weight: 600;
+      line-height: 1.4;
+      color: var(--text);
+    }
+
+    .news-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .category-badge {
+      font-family: 'Space Mono', monospace;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      padding: 3px 7px;
+      border-radius: 4px;
+      text-transform: uppercase;
+    }
+
+    .cat-release  { background: rgba(79,127,255,0.15); color: var(--accent1); border: 1px solid rgba(79,127,255,0.3); }
+    .cat-research { background: rgba(162,89,255,0.15); color: var(--accent2); border: 1px solid rgba(162,89,255,0.3); }
+    .cat-ranking  { background: rgba(0,212,170,0.12); color: var(--accent3); border: 1px solid rgba(0,212,170,0.3); }
+    .cat-business { background: rgba(255,179,64,0.12); color: var(--warn);    border: 1px solid rgba(255,179,64,0.3); }
+    .cat-other    { background: rgba(107,116,148,0.15); color: var(--muted);  border: 1px solid rgba(107,116,148,0.3); }
+
+    .importance-dots {
+      display: flex;
+      gap: 3px;
+      align-items: center;
+    }
+
+    .dot {
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: var(--border);
+    }
+    .dot.filled { background: var(--accent1); }
+    .dot.filled.high { background: var(--danger); }
+
+    .news-body {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .news-link {
+      display: inline-block;
+      margin-top: 8px;
+      font-family: 'Space Mono', monospace;
+      font-size: 11px;
+      color: var(--accent1);
+      text-decoration: none;
+      opacity: 0.7;
+      transition: opacity 0.2s;
+    }
+    .news-link:hover { opacity: 1; }
+
+    /* ── Rankings ── */
+    .rankings-panel {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px 18px;
+      height: fit-content;
+    }
+
+    .ranking-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .ranking-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .ranking-item:first-child { padding-top: 0; }
+
+    .rank-num {
+      font-family: 'Space Mono', monospace;
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--border);
+      min-width: 32px;
+      line-height: 1;
+      margin-top: 2px;
+    }
+
+    .rank-num.top1 { color: #ffd700; }
+    .rank-num.top2 { color: #b0b8c8; }
+    .rank-num.top3 { color: #c87533; }
+
+    .rank-info { flex: 1; min-width: 0; }
+
+    .rank-name-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+
+    .rank-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .rank-company {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .trend-badge {
+      font-size: 12px;
+      line-height: 1;
+    }
+
+    .rank-reason {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    /* ── Loading / Error ── */
+    .state-box {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 48px 24px;
+      text-align: center;
+    }
+
+    .state-icon { font-size: 36px; margin-bottom: 12px; }
+    .state-title { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+    .state-sub { font-size: 13px; color: var(--muted); }
+
+    .spinner {
+      width: 32px; height: 32px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent1);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 16px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Manual trigger btn ── */
+    .trigger-btn {
+      background: linear-gradient(135deg, var(--accent1), var(--accent2));
+      border: none;
+      color: #fff;
+      padding: 10px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      margin-top: 16px;
+      transition: opacity 0.2s;
+    }
+    .trigger-btn:hover { opacity: 0.85; }
+    .trigger-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center;
+      padding: 24px;
+      font-family: 'Space Mono', monospace;
+      font-size: 11px;
+      color: var(--muted);
+      border-top: 1px solid var(--border);
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">
+      <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="18" cy="18" r="17" stroke="#4f7fff" stroke-width="1.5" stroke-dasharray="4 2"/>
+        <circle cx="18" cy="18" r="10" stroke="#a259ff" stroke-width="1.5" stroke-dasharray="3 2"/>
+        <circle cx="18" cy="18" r="4" fill="#00d4aa"/>
+        <line x1="18" y1="1" x2="18" y2="35" stroke="#1e2640" stroke-width="1"/>
+        <line x1="1" y1="18" x2="35" y2="18" stroke="#1e2640" stroke-width="1"/>
+      </svg>
+    </div>
+    <span class="logo-text">AI TREND RADAR</span>
+  </div>
+  <div class="header-right">
+    <select id="date-select" class="date-selector"></select>
+    <button class="refresh-btn" onclick="loadData()">↻ 更新</button>
+  </div>
+</header>
+
+<main>
+  <!-- Alert Banner -->
+  <div id="alert-banner" class="level-0">
+    <div class="alert-icon" id="alert-icon">⚠️</div>
+    <div>
+      <div class="alert-label" id="alert-label">ALERT</div>
+      <div class="alert-text" id="alert-text"></div>
+    </div>
+  </div>
+
+  <!-- Summary -->
+  <div class="summary-card" id="summary-card" style="display:none">
+    <div class="summary-date" id="summary-date"></div>
+    <div class="summary-text" id="summary-text"></div>
+  </div>
+
+  <!-- Main content -->
+  <div class="two-col">
+    <!-- News -->
+    <div>
+      <div class="section-title">📰 今日のAIニュース</div>
+      <div class="news-list" id="news-list">
+        <div class="state-box">
+          <div class="spinner"></div>
+          <div class="state-title">データを読み込んでいます</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Rankings -->
+    <div>
+      <div class="section-title">🏆 AIモデルランキング</div>
+      <div class="rankings-panel" id="rankings-panel">
+        <div class="state-box" style="padding:24px">
+          <div class="spinner"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Manual collect trigger -->
+  <div style="text-align:center; padding: 8px 0 4px;">
+    <button class="trigger-btn" id="trigger-btn" onclick="triggerCollect()">
+      🔍 今すぐ収集を実行
+    </button>
+    <div style="font-size:12px; color:var(--muted); margin-top:8px;">
+      毎朝8:00に自動実行されます。手動でも実行可能です。
+    </div>
+  </div>
+</main>
+
+<footer>AI TREND RADAR &nbsp;|&nbsp; Powered by Claude + Vercel + Supabase</footer>
+
+<script>
+  const CATEGORY_LABEL = {
+    release: 'リリース', research: '研究', ranking: 'ランキング',
+    business: 'ビジネス', other: 'その他'
+  };
+
+  const TREND_ICON = { up: '↑', down: '↓', stable: '→' };
+  const TREND_COLOR = { up: '#00d4aa', down: '#ff4f6e', stable: '#6b7494' };
+
+  let currentDate = new Date().toISOString().split('T')[0];
+
+  // ── 日付セレクタ初期化
+  async function initDateSelector(dates) {
+    const sel = document.getElementById('date-select');
+    sel.innerHTML = '';
+    if (!dates || dates.length === 0) {
+      const opt = document.createElement('option');
+      opt.value = currentDate;
+      opt.textContent = formatDateJP(currentDate);
+      sel.appendChild(opt);
+      return;
+    }
+    dates.forEach(d => {
+      const opt = document.createElement('option');
+      opt.value = d;
+      opt.textContent = formatDateJP(d);
+      if (d === currentDate) opt.selected = true;
+      sel.appendChild(opt);
+    });
+    sel.onchange = () => { currentDate = sel.value; loadData(currentDate); };
+  }
+
+  function formatDateJP(dateStr) {
+    const d = new Date(dateStr + 'T00:00:00');
+    return `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`;
+  }
+
+  // ── データ読み込み
+  async function loadData(date) {
+    const target = date || currentDate;
+    showLoading();
+
+    try {
+      const res = await fetch(`/api/news?date=${target}`);
+      if (res.status === 404) {
+        showEmpty(target);
+        return;
+      }
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+      const data = await res.json();
+      renderAll(data);
+      initDateSelector(data.available_dates);
+    } catch (err) {
+      showError(err.message);
+    }
+  }
+
+  // ── レンダリング
+  function renderAll(data) {
+    renderAlert(data.alert_level, data.summary);
+    renderSummary(data.date, data.summary);
+    renderNews(data.items);
+    renderRankings(data.rankings);
+  }
+
+  function renderAlert(level, summary) {
+    const banner = document.getElementById('alert-banner');
+    banner.className = `level-${level}`;
+    if (level === 0) return;
+
+    document.getElementById('alert-icon').textContent = level === 2 ? '🚨' : '⚡';
+    document.getElementById('alert-label').textContent = level === 2 ? 'BREAKING' : 'WATCH';
+    document.getElementById('alert-text').textContent = summary || '';
+  }
+
+  function renderSummary(date, text) {
+    const card = document.getElementById('summary-card');
+    document.getElementById('summary-date').textContent =
+      `📅 ${formatDateJP(date)} のサマリー`;
+    document.getElementById('summary-text').textContent = text || '—';
+    card.style.display = 'block';
+  }
+
+  function renderNews(items) {
+    const list = document.getElementById('news-list');
+    if (!items || items.length === 0) {
+      list.innerHTML = `<div class="state-box">
+        <div class="state-icon">📭</div>
+        <div class="state-title">ニュースがありません</div>
+      </div>`;
+      return;
+    }
+
+    list.innerHTML = items.map(item => {
+      const dots = Array.from({length: 5}, (_, i) => {
+        const cls = i < item.importance
+          ? (item.importance >= 4 ? 'dot filled high' : 'dot filled')
+          : 'dot';
+        return `<span class="${cls}"></span>`;
+      }).join('');
+
+      const catClass = `cat-${item.category || 'other'}`;
+      const catLabel = CATEGORY_LABEL[item.category] || 'その他';
+      const linkHtml = item.source_url
+        ? `<a class="news-link" href="${item.source_url}" target="_blank" rel="noopener">↗ ソースを読む</a>`
+        : '';
+
+      return `
+        <div class="news-card">
+          <div class="news-card-header">
+            <div class="news-title">${escHtml(item.title)}</div>
+            <div class="news-meta">
+              <span class="category-badge ${catClass}">${catLabel}</span>
+              <div class="importance-dots">${dots}</div>
+            </div>
+          </div>
+          <div class="news-body">${escHtml(item.body || '')}</div>
+          ${linkHtml}
+        </div>`;
+    }).join('');
+  }
+
+  function renderRankings(rankings) {
+    const panel = document.getElementById('rankings-panel');
+    if (!rankings || rankings.length === 0) {
+      panel.innerHTML = `<div class="state-box" style="padding:24px">
+        <div class="state-icon">📊</div>
+        <div class="state-sub">ランキングデータなし</div>
+      </div>`;
+      return;
+    }
+
+    panel.innerHTML = rankings.map((r, i) => {
+      const rankClass = i === 0 ? 'top1' : i === 1 ? 'top2' : i === 2 ? 'top3' : '';
+      const trendIcon = TREND_ICON[r.trend] || '→';
+      const trendColor = TREND_COLOR[r.trend] || '#6b7494';
+
+      return `
+        <div class="ranking-item">
+          <div class="rank-num ${rankClass}">${r.rank}</div>
+          <div class="rank-info">
+            <div class="rank-name-row">
+              <span class="rank-name">${escHtml(r.name)}</span>
+              <span class="trend-badge" style="color:${trendColor}">${trendIcon}</span>
+            </div>
+            <div class="rank-company">${escHtml(r.company || '')}</div>
+            <div class="rank-reason">${escHtml(r.reason || '')}</div>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  // ── 状態表示
+  function showLoading() {
+    document.getElementById('news-list').innerHTML = `
+      <div class="state-box"><div class="spinner"></div>
+      <div class="state-title">読み込み中...</div></div>`;
+    document.getElementById('rankings-panel').innerHTML = `
+      <div class="state-box" style="padding:24px"><div class="spinner"></div></div>`;
+    document.getElementById('summary-card').style.display = 'none';
+    document.getElementById('alert-banner').className = 'level-0';
+  }
+
+  function showEmpty(date) {
+    initDateSelector([]);
+    document.getElementById('news-list').innerHTML = `
+      <div class="state-box">
+        <div class="state-icon">🛰️</div>
+        <div class="state-title">${formatDateJP(date)} のデータなし</div>
+        <div class="state-sub">「今すぐ収集を実行」ボタンで取得できます</div>
+      </div>`;
+    document.getElementById('rankings-panel').innerHTML = `
+      <div class="state-box" style="padding:24px">
+        <div class="state-icon" style="font-size:24px">📊</div>
+        <div class="state-sub">データなし</div>
+      </div>`;
+    document.getElementById('summary-card').style.display = 'none';
+  }
+
+  function showError(msg) {
+    document.getElementById('news-list').innerHTML = `
+      <div class="state-box">
+        <div class="state-icon">⚠️</div>
+        <div class="state-title">読み込みエラー</div>
+        <div class="state-sub">${escHtml(msg)}</div>
+      </div>`;
+  }
+
+  // ── 手動収集トリガー
+  async function triggerCollect() {
+    const btn = document.getElementById('trigger-btn');
+    btn.disabled = true;
+    btn.textContent = '⏳ 収集中... (30〜60秒かかります)';
+
+    try {
+      const res = await fetch('/api/cron/collect', { method: 'GET' });
+      const data = await res.json();
+      if (data.success || data.message) {
+        btn.textContent = '✅ 収集完了！';
+        setTimeout(() => {
+          btn.disabled = false;
+          btn.textContent = '🔍 今すぐ収集を実行';
+          loadData();
+        }, 2000);
+      } else {
+        throw new Error(data.error || 'Unknown error');
+      }
+    } catch (err) {
+      btn.textContent = `❌ エラー: ${err.message}`;
+      setTimeout(() => {
+        btn.disabled = false;
+        btn.textContent = '🔍 今すぐ収集を実行';
+      }, 3000);
+    }
+  }
+
+  function escHtml(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  // ── 初期化
+  loadData();
+</script>
+</body>
+</html>

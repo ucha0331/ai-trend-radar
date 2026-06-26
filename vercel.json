@@ -1,0 +1,13 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/collect",
+      "schedule": "0 23 * * *"
+    }
+  ],
+  "functions": {
+    "api/cron/collect.js": {
+      "maxDuration": 60
+    }
+  }
+}
