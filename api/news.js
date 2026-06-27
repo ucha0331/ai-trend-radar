@@ -11,37 +11,43 @@ export default async function handler(req, res) {
   }
 
   const { date } = req.query;
-  // JSTで今日の日付
   const jstDate = new Date(Date.now() + 9 * 60 * 60 * 1000);
   const targetDate = date || jstDate.toISOString().split("T")[0];
 
+  console.log("[API/news] targetDate:", targetDate);
+  console.log("[API/news] SUPABASE_URL:", process.env.SUPABASE_URL ? "set" : "NOT SET");
+  console.log("[API/news] SUPABASE_ANON_KEY:", process.env.SUPABASE_ANON_KEY ? "set" : "NOT SET");
+
   try {
-    // サマリー取得
     const { data: news, error: newsError } = await supabase
       .from("ai_news")
       .select("*")
       .eq("date", targetDate)
       .single();
 
+    console.log("[API/news] news:", JSON.stringify(news));
+    console.log("[API/news] newsError:", JSON.stringify(newsError));
+
     if (newsError || !news) {
-      return res.status(404).json({ error: "No data for this date", date: targetDate });
+      return res.status(404).json({ 
+        error: "No data for this date", 
+        date: targetDate,
+        supabaseError: newsError?.message
+      });
     }
 
-    // ニュースアイテム取得（importance降順）
     const { data: items } = await supabase
       .from("ai_news_items")
       .select("*")
       .eq("news_id", news.id)
       .order("importance", { ascending: false });
 
-    // ランキング取得
     const { data: rankingRow } = await supabase
       .from("ai_rankings")
       .select("*")
       .eq("date", targetDate)
       .single();
 
-    // 利用可能な日付一覧（直近30日分）
     const { data: dates } = await supabase
       .from("ai_news")
       .select("date")
