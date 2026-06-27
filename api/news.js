@@ -11,7 +11,9 @@ export default async function handler(req, res) {
   }
 
   const { date } = req.query;
-  const targetDate = date || new Date().toISOString().split("T")[0];
+  // JSTで今日の日付
+  const jstDate = new Date(Date.now() + 9 * 60 * 60 * 1000);
+  const targetDate = date || jstDate.toISOString().split("T")[0];
 
   try {
     // サマリー取得
