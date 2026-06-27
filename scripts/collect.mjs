@@ -90,11 +90,16 @@ async function main() {
     .map((block) => block.text)
     .join("");
 
-  // JSONパース
-  const jsonStr = textContent
+  // JSONパース（{ から } の間だけ抽出）
+  let jsonStr = textContent
     .replace(/```json\n?/g, "")
     .replace(/```\n?/g, "")
     .trim();
+  const jsonStart = jsonStr.indexOf("{");
+  const jsonEnd = jsonStr.lastIndexOf("}");
+  if (jsonStart !== -1 && jsonEnd !== -1) {
+    jsonStr = jsonStr.slice(jsonStart, jsonEnd + 1);
+  }
   const data = JSON.parse(jsonStr);
 
   // Supabase保存
