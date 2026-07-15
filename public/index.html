@@ -559,20 +559,20 @@
 
   // ── レンダリング
   function renderAll(data) {
-    renderAlert(data.alert_level, data.summary);
+    renderAlert(data.alert_level, data.alert_reason);
     renderSummary(data.date, data.summary);
     renderNews(data.items);
     renderRankings(data.rankings);
   }
 
-  function renderAlert(level, summary) {
+  function renderAlert(level, reason) {
     const banner = document.getElementById('alert-banner');
     banner.className = `level-${level}`;
     if (level === 0) return;
 
     document.getElementById('alert-icon').textContent = level === 2 ? '🚨' : '⚡';
     document.getElementById('alert-label').textContent = level === 2 ? 'BREAKING' : 'WATCH';
-    document.getElementById('alert-text').textContent = summary || '';
+    document.getElementById('alert-text').textContent = reason || '';
   }
 
   function renderSummary(date, text) {

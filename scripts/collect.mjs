@@ -32,6 +32,7 @@ async function buildUserPrompt(today, pastTitles) {
 {
   "summary": "今日の総括（200字以内）",
   "alert_level": 0または1または2（0:通常, 1:注目, 2:重大発表あり）,
+  "alert_reason": "alert_levelが1か2の場合のみ、その理由を一文で（60字以内、summaryとは異なる短い見出し的な文章。alert_levelが0の場合は空文字でよい）",
   "items": [
     {
       "title": "ニュースタイトル（50字以内）",
@@ -138,6 +139,7 @@ async function main() {
       date: today,
       summary: data.summary,
       alert_level: data.alert_level ?? 0,
+      alert_reason: data.alert_reason || null,
     })
     .select()
     .single();
