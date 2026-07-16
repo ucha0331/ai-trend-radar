@@ -57,7 +57,9 @@ itemsは5〜8件、rankingsは5件でお願いします。`;
 }
 
 async function main() {
-  const today = new Date().toISOString().split("T")[0];
+  // JSTで今日の日付を取得（GitHub ActionsはUTCで動くためズレを防ぐ）
+  const jstNow = new Date(Date.now() + 9 * 60 * 60 * 1000);
+  const today = jstNow.toISOString().split("T")[0];
   console.log(`[AI Trend Radar] Collecting for ${today}...`);
 
   // 今日のデータが既にあるかチェック
@@ -72,8 +74,8 @@ async function main() {
     process.exit(0);
   }
 
-  // 過去3日分のニュースタイトルを取得
-  const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+  // 過去3日分のニュースタイトルを取得（JST基準）
+  const threeDaysAgo = new Date(Date.now() + 9 * 60 * 60 * 1000 - 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
   const { data: pastNews } = await supabase
     .from("ai_news")
     .select("id")
